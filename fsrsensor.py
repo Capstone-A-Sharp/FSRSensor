@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 # Arduino와 연결된 시리얼 포트 설정
-ser = serial.Serial('/dev/cu.usbmodem1401', 115200)  # 포트를 'COM14'로 설정
+ser = serial.Serial('/dev/cu.usbmodem1201', 115200)  # 포트를 'COM14'로 설정
 numRows, numCols = 16, 16
 
 # 시각화 설정
