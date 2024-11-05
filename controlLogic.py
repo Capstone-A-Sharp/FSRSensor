@@ -71,30 +71,36 @@ def update_data(*args):
     return None, None
 
 # 제어 알고리즘 함수
+# 제어 알고리즘 함수 수정
 def control_algorithm():
-    global speed
+    global speed, ser
     amplified_matrix, avg_values = update_data()
     if amplified_matrix is not None and avg_values is not None:
         # 미르고 있는지 당기고 있는지 상태 판단
-        push_sum = avg_values[6] + avg_values[7] + avg_values[8]
-        pull_sum = avg_values[0] + avg_values[1] + avg_values[2]
-                
+        push_sum = avg_values[6] + avg_values[7] + avg_values[8]  # 손바닥 부분
+        pull_sum = avg_values[0] + avg_values[1] + avg_values[2]  # 손가락 부분
+
+        # 손바닥 부분에 특정값 이상이 들어올 때 
         if avg_values[7] >= 20 and avg_values[8] >= 20:
             if push_sum > pull_sum:
                 acceleration = np.dot(avg_values, [0.05] * len(avg_values))  # 가속도 크기 조정
                 target_speed = min(max_speed, speed + acceleration)  # 목표 속도 계산
                 speed = alpha * speed + (1 - alpha) * target_speed  # 부드러운 속도 변화 적용
-                print(f"속도: {speed:.2f}")
-                # print(f"가속도: {acceleration:.2f}")
             else:
-                print(f"속도: {speed:.2f}")
+                # 유지 상태
+                pass
         else:
-            deceleration = np.dot((avg_values), [0.1] * len(avg_values))  # 감소도 크기 조정 (감속도가 더 크게)
+            deceleration = np.dot(avg_values, [0.1] * len(avg_values))  # 감속도 크기 조정 (감속도가 더 크게)
             target_speed = max(0, speed - deceleration)  # 목표 속도 계산
             speed = alpha * speed + (1 - alpha) * target_speed  # 부드러운 속도 변화 적용
-            print(f"속도: {speed:.2f}")
-            # print(f"감속도: {deceleration:.2f}")
+
+        # Arduino에 속도 값 전송
+        speed_int = int(speed) 
+        ser.write(f"{speed_int}\n".encode())  
+        print(f"속도: {speed:.2f}")
+
     return amplified_matrix
+
 
 # 애니메이션 업데이트 함수
 def update_wrapper(*args):
