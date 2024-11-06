@@ -15,9 +15,10 @@ img = ax.imshow(np.zeros((numRows, numCols)), cmap='inferno', interpolation='bil
 plt.colorbar(img, ax=ax, label="Pressure Intensity")
 
 # HPF 활용 기능을 포함한 데이터 가공 함수
-def apply_hpf(data, threshold=10):
+def apply_hpf(data, threshold=20):
     return np.where(data > threshold, data, 0)
 
+'''
 # 보드로부터 압력센서 받기
 def read_data():
     global ser
@@ -35,6 +36,67 @@ def read_data():
             row += 1
 
     return pressure_matrix if row == numRows else None
+'''
+# 보드에서 압력 센서 데이터 읽기
+def read_data():
+    global ser
+    pressure_matrix1 = np.zeros((numRows, numCols))
+    pressure_matrix2 = np.zeros((numRows, numCols))
+
+    row = 0
+
+    sensor1_active = False
+    sensor2_active = False
+
+    # 데이터 읽기
+    for sensor in range(2):  # 0: Sensor 1, 1: Sensor 2
+        row = 0
+        while row < numRows:
+            line = ser.readline().decode().strip()
+            # 데이터 시작을 확인하는 문자열에 대한 체크
+            if "Pressure Sensor 1 Data:" in line:
+                sensor1_active = True
+                print("Reading Pressure Sensor 1 Data...")
+                continue
+            elif "Pressure Sensor 2 Data:" in line:
+                sensor2_active = True
+                print("Reading Pressure Sensor 2 Data...")
+                continue
+            
+            # 데이터 처리
+            if sensor1_active and sensor == 0:
+                if line == "END":
+                    break
+                values = line.split(',')
+                if len(values) == numCols:
+                    print(f"Sensor 1 Row {row}: {values}")
+                    pressure_matrix1[row] = list(map(int, values))
+                    row += 1
+
+            elif sensor2_active and sensor == 1:
+                if line == "END":
+                    break
+                values = line.split(',')
+                if len(values) == numCols:
+                    # print(f"Sensor 2 Row {row}: {values}")
+                    pressure_matrix2[row] = list(map(int, values))
+                    row += 1
+
+    '''
+    # 데이터 읽기
+    while row < numRows:
+        line = ser.readline().decode().strip()
+        if line == "END":
+            break
+        values = line.split(',')
+        if len(values) == numCols:
+            pressure_matrix1[row] = list(map(int, values))
+            row += 1
+                '''
+
+
+    return pressure_matrix1
+
 
 # 평균값 터미널에 출력
 # 원래는 각 행마다 평균값을 구해서 해당 평균값을 단순 대조하는 방향으로 로직을 설계하려 했음
@@ -47,7 +109,7 @@ def get_filtered_matrix(pressure_matrix):
     # HPF 적용
     filtered_matrix = apply_hpf(pressure_matrix)
     # 제곱 & 10 나누기 적용
-    amplified_matrix = np.square(filtered_matrix) / 10
+    amplified_matrix = np.square(filtered_matrix) / 20
     
     # 평균 필터 적용
     avg_values = apply_avg_filter(amplified_matrix)

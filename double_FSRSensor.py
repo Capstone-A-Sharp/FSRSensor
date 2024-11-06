@@ -3,21 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-# Arduino과 연결된 시리얼 폴트 설정
-ser = serial.Serial('/dev/cu.usbmodem1301', 115200)  # 폴트를 '/dev/cu.usbmodem1401'로 설정
+# Arduino와 연결된 시리얼 포트 설정
+ser = serial.Serial('/dev/cu.usbmodem1301', 115200)  # 적절한 포트로 설정
 numRows, numCols = 16, 16
 
-# 시간과 설정
+# 시각화 설정
 plt.style.use('dark_background')
-fig, ax = plt.subplots()
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))  # 두 개의 서브플롯 생성
+img1 = ax1.imshow(np.zeros((numRows, numCols)), cmap='inferno', interpolation='bilinear', vmin=0, vmax=100)
+img2 = ax2.imshow(np.zeros((numRows, numCols)), cmap='inferno', interpolation='bilinear', vmin=0, vmax=100)
 
-# 'inferno' 색상 맵과 bilinear 보간을 사용해 더 불량고 명확하게 표현
-img = ax.imshow(np.zeros((numRows, numCols)), cmap='inferno', interpolation='bilinear', vmin=0, vmax=100)
-plt.colorbar(img, ax=ax, label="Pressure Intensity")
-
-# HPF 활용 기능을 포함한 데이터 가공 함수
-def apply_hpf(data, threshold=30):
-    return np.where(data > threshold, data, 0)
+ax1.set_title("Real-Time Pressure Sensor 1 Visualization")
+# ax2.set_title("Real-Time Pressure Sensor 2 Visualization")
+plt.colorbar(img1, ax=ax1, label="Pressure Intensity")
+# plt.colorbar(img2, ax=ax2, label="Pressure Intensity")
 
 def update_data(*args):
     global ser
@@ -62,13 +61,11 @@ def update_data(*args):
                     row += 1
 
     # 실시간 데이터 업데이트
-    img.set_data(pressure_matrix1)
+    img1.set_data(pressure_matrix1)
     # img2.set_data(pressure_matrix2)
     
-    return [img]
+    return [img1, img2]
 
-
-# 애니먼이션으로 실시간 업데이트 설정
-ani = animation.FuncAnimation(fig, update_data, interval=100, blit=False)  # 딩레이 100ms로 설정
-plt.title("Real-Time Pressure Sensor Visualization with HPF (16x16)")
+# 애니메이션으로 실시간 업데이트 설정
+ani = animation.FuncAnimation(fig, update_data, interval=100, blit=False)  # 딜레이 100ms로 설정
 plt.show()
