@@ -5,6 +5,7 @@ import matplotlib.animation as animation
 
 # Arduino과 연결 설정
 ser = serial.Serial('/dev/cu.usbmodem1401', 115200)  # 올바르지 실리언 폴트를 설정
+uno_ser = serial.Serial('/dev/cu.usbmodem1201', 115200) # 추가
 numRows, numCols = 16, 16
 
 # 초기 속도 설정
@@ -39,6 +40,7 @@ def read_data():
         row = 0
         while row < numRows:
             line = ser.readline().decode().strip()
+            # print(line)
             # 데이터 시작을 확인하는 문자열에 대한 체크
             if "Pressure Sensor 1 Data:" in line:
                 sensor1_active = True
@@ -126,13 +128,14 @@ def control_algorithm():
             speed = alpha * speed + (1 - alpha) * target_speed  # 부들리한 속도 변화 적용
 
         else:
-            deceleration = np.dot(avg_values, [0.1] * len(avg_values))  # 가속도 크기 조정 (가속도가 더 크게)
+            deceleration = np.dot(avg_values, [0.2] * len(avg_values))  # 가속도 크기 조정 (가속도가 더 크게)
             target_speed = max(0, speed - deceleration)  # 모표 속도 계산
             speed = alpha * speed + (1 - alpha) * target_speed  # 부들리한 속도 변화 적용
 
         # Arduino에 속도 값 전송
         speed_int = int(speed) 
-        ser.write(f"{speed_int}\n".encode())  
+        # ser.write(f"{speed_int}\n".encode()) 
+        uno_ser.write(f"{speed_int}\n".encode()) #추가
         print(f"속도: {speed:.2f}")
 
     return amplified_matrix
